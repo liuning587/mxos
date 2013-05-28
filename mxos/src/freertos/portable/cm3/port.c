@@ -74,6 +74,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#if CORE_TYPE == CORE_CM3
+
 /* For backward compatibility, ensure configKERNEL_INTERRUPT_PRIORITY is
 defined.  The value should also ensure backward compatibility.
 FreeRTOS.org versions prior to V4.4.0 did not include this definition. */
@@ -301,6 +303,12 @@ void vPortExitCritical( void )
 	}
 }
 /*-----------------------------------------------------------*/
+unsigned portBASE_TYPE getNesting( void )
+{
+    return uxCriticalNesting;
+}
+
+/*-----------------------------------------------------------*/
 
 __attribute__(( naked )) unsigned long ulPortSetInterruptMask( void )
 {
@@ -518,4 +526,4 @@ __attribute__(( weak )) void vPortSetupTimerInterrupt( void )
 	portNVIC_SYSTICK_CTRL_REG = portNVIC_SYSTICK_CLK_BIT | portNVIC_SYSTICK_INT_BIT | portNVIC_SYSTICK_ENABLE_BIT;
 }
 /*-----------------------------------------------------------*/
-
+#endif

@@ -20,6 +20,11 @@ Section: Macro Definitions
 -----------------------------------------------------------------------------*/
 #define OS_RELEASE  "0.1.0-rc1"
 
+#define CORE_CM3    1
+#define CORE_CM4    2
+
+#define CORE_TYPE 1
+
 #define MCU_CLOCK      bsp_get_mcu_clk()        /**< 获取MCU的主频 */
 #define MAX_INT_COUNT  bsp_get_max_int_count()  /**< 获取MCU最大中断数量 */
 

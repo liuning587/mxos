@@ -16,8 +16,12 @@
  ----------------------------------------------------------------------------*/
 #include <types.h>
 #include <stdlib.h>
-#include <core_cm3.h>
 #include <oscfg.h>
+#if CORE_TYPE == CORE_CM3
+#include <core_cm3.h>
+#elif  CORE_TYPE == CORE_CM4
+#include <core_cm4.h>
+#endif
 
 /*-----------------------------------------------------------------------------
  Section: Type Definitions
@@ -47,9 +51,10 @@ int32_t intCnt = 0;
 /* NONE */
 
 /*-----------------------------------------------------------------------------
- Section: Local Function Prototypes
+ Section: Global Function Prototypes
  ----------------------------------------------------------------------------*/
-/* NONE */
+extern void vPortEnterCritical( void );
+extern void vPortExitCritical( void );
 
 /*-----------------------------------------------------------------------------
  Section: Function Definitions
@@ -262,6 +267,7 @@ intLibInit(void)
                 | SCB_SHCSR_USGFAULTENA_Msk
                 | SCB_SHCSR_MEMFAULTENA_Msk);
         SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;  /* 使能除数为0异常 */
+
     }
     return OK;
 }
@@ -277,11 +283,7 @@ intLibInit(void)
  ******************************************************************************
  */
 extern void intLock(void) {
-     __asm(
-           "CPSID   I\n"
-           "CPSID   I\n"
-          );
-     intCnt++;
+    vPortEnterCritical();
 }
 
 /**
@@ -294,11 +296,7 @@ extern void intLock(void) {
  ******************************************************************************
  */
 extern void intUnlock(void) {
-     intCnt--;
-     __asm(
-           "CPSIE   I\n"
-           "BX      LR\n"
-          );
+    vPortExitCritical();
 }
 /**
 * @}

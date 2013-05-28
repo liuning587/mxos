@@ -74,7 +74,7 @@
 #define PORTABLE_H
 
 /* Include the macro file relevant to the port being used. */
-
+#include <oscfg.h>
 	
 /* Catch all to ensure portmacro.h is included in the build.  Newer demos
 have the path as part of the project options, rather than as relative from
@@ -83,7 +83,11 @@ portmacro.h has not yet been included - as every portmacro.h provides a
 portENTER_CRITICAL() definition.  Check the demo application for your demo
 to find the path to the correct portmacro.h file. */
 #ifndef portENTER_CRITICAL
-	#include "../portable/portmacro.h"
+#if CORE_TYPE == CORE_CM3
+	#include "../portable/cm3/portmacro.h"
+#elif CORE_TYPE == CORE_CM4
+    #include "../portable/cm4/portmacro.h"
+#endif
 #endif
 	
 #if portBYTE_ALIGNMENT == 8
