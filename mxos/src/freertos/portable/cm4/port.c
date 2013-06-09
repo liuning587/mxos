@@ -184,7 +184,7 @@ portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack, pdTASK_CODE
 {
 	/* Simulate the stack frame as it would be created by a context switch
 	interrupt. */
-#if 0
+#if 1
 	/* Offset added to account for the way the MCU uses the stack on entry/exit
 	of interrupts, and to ensure alignment. */
 	pxTopOfStack--;
@@ -193,7 +193,7 @@ portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack, pdTASK_CODE
 	pxTopOfStack--;
 	*pxTopOfStack = ( portSTACK_TYPE ) pxCode;	/* PC */
 	pxTopOfStack--;
-	*pxTopOfStack = 0;	/* LR */
+	*pxTopOfStack = ( portSTACK_TYPE ) onTaskReturn;	/* LR */
 
 	/* Save code space by skipping register initialisation. */
 	pxTopOfStack -= 5;	/* R12, R3, R2 and R1. */
@@ -206,7 +206,7 @@ portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack, pdTASK_CODE
 
 	pxTopOfStack -= 8;	/* R11, R10, R9, R8, R7, R6, R5 and R4. */
 
-#endif
+#else
 
     /* Registers stacked as if auto-saved on exception    */
     *(pxTopOfStack)    = (portSTACK_TYPE)0x01000000uL;  /* xPSR */
@@ -227,6 +227,7 @@ portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack, pdTASK_CODE
     *(--pxTopOfStack)  = (portSTACK_TYPE)0x06060606uL;            /* R6 */
     *(--pxTopOfStack)  = (portSTACK_TYPE)0x05050505uL;            /* R5 */
     *(--pxTopOfStack)  = (portSTACK_TYPE)0x04040404uL;            /* R4 */
+#endif
 	return pxTopOfStack;
 }
 /*-----------------------------------------------------------*/
