@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file      startup_m3.c
+ * @file      startup.c
  * @brief     内核中断向量表.
  * @details   This file including all API functions's 
  *            implement of startup_m3.c.
@@ -19,6 +19,7 @@
  Section: Macro Definitions
  ----------------------------------------------------------------------------*/
 #define ROUTINE(n) routine##n
+#define WEAK __attribute__ ((weak))
 
 /*-----------------------------------------------------------------------------
  Section: Type Definitions
@@ -52,6 +53,8 @@ extern int main();
 
 extern void excEnterCommon(void);
 
+void WEAK bsp_close_watchdog(void);
+
 /*-----------------------------------------------------------------------------
  Section: Local Variables
  ----------------------------------------------------------------------------*/
@@ -65,6 +68,20 @@ extern void excEnterCommon(void);
 /*-----------------------------------------------------------------------------
  Section: Function Definitions
  ----------------------------------------------------------------------------*/
+/**
+ ******************************************************************************
+ * @brief   默认关闭看门狗
+ * @param[in]  None
+ *
+ * @retrun    None
+ ******************************************************************************
+ */
+void
+_default_bsp_close_watchdog(void)
+{
+    //空函数
+}
+
 /**
  ******************************************************************************
  * @brief      复位中断入口.
@@ -81,6 +98,9 @@ void
 resetRoutine(void)
 {
     unsigned long *pulSrc, *pulDest;
+
+    //针对特殊芯片，需要关闭看门狗
+    bsp_close_watchdog();
 
     //
     // Copy the data segment initializers from flash to SRAM.
@@ -287,4 +307,11 @@ const INTVECT_ITEM __vector_table[] =
     {ROUTINE(100)}, {ROUTINE(101)}, {ROUTINE(102)}, {ROUTINE(103)}
 };
 
-/*---------------------------- startup_m3.c ---------------------------------*/
+/**
+  *@brief Provide weak aliases for each Exception handler to the Default_Handler.
+  *       As they are weak aliases, any function with the same name will override
+  *       this definition.
+  */
+#pragma weak bsp_close_watchdog = _default_bsp_close_watchdog
+
+/*------------------------------ startup.c ----------------------------------*/
