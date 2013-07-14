@@ -33,12 +33,9 @@ static device_t* the_opend_devs[MAX_OPEN_NUM];  /* 已打开设备池 */
  ******************************************************************************
  * @brief 判断句柄是否合法
  * @param[in]  realfd
+ *
  * @retval     FALSE    : 非法
  * @retval     TRUE     : 合法
- *
- * @details
- *
- * @note
  ******************************************************************************
  */
 static bool_e
@@ -63,7 +60,7 @@ is_fd_valid(int32_t realfd)
  ******************************************************************************
  * @brief 寻找空闲句柄空间,并插入
  * @param[in]  *pnode    : 设备描述符
- * @param[out] None
+ *
  * @retval     -1   : 无空闲空间
  * @retval     >0   : 插入的句柄
  ******************************************************************************
@@ -87,8 +84,8 @@ find_free_fd(device_t* pnode)
 
 /**
  ******************************************************************************
- * @brief      在已打开文件列表中查询文件
- * @param[in]  * pname  : 查找的设备名
+ * @brief   在已打开文件列表中查询文件
+ * @param[in]  *pname  : 查找的设备名
  *
  * @retval     -1   ：找不到
  * @retval     >=0  : 已打开文件数组下标(实际的文件句柄)
@@ -110,7 +107,7 @@ find_opend_by_name(const char_t* pname)
 
 /**
  ******************************************************************************
- * @brief 寻找已注册的设备 (按名称查找)
+ * @brief   寻找已注册的设备 (按名称查找)
  * @param[in]  * pname  : 查找的设备名
  *
  * @retval     NULL ：找不到
@@ -138,10 +135,9 @@ find_dev_by_name(const char_t* pname)
 /**
  ******************************************************************************
  * @brief   寻找已注册的设备 (按大类号小类号查找)
- * @param[in]  None
- * @param[out] None
+ * @param[in]  serial
  *
- * @retval     None
+ * @retval  设备指针
  ******************************************************************************
  */
 static device_t*
@@ -173,7 +169,9 @@ status_t
 devlib_init(void)
 {
     if (the_devlib_lock != NULL)
+    {
         return OK;
+    }
     if ((the_devlib_lock = semBCreate(1)) == NULL)
     {
         Dprintf("semBCreate err\n");
@@ -197,7 +195,10 @@ devlib_init(void)
  ******************************************************************************
  */
 status_t
-dev_create(const char_t* pname, const fileopt_t* pfileopt, int32_t serial, void* pexparam)
+dev_create(const char_t* pname,
+        const fileopt_t* pfileopt,
+        int32_t serial,
+        void* pexparam)
 {
     D_ASSERT(pname != NULL);
     D_ASSERT(pfileopt != NULL);
@@ -303,7 +304,8 @@ dev_release(const char_t* pname)
  ******************************************************************************
  */
 int32_t
-dev_open(const char_t* pname, int32_t flags)
+dev_open(const char_t* pname,
+        int32_t flags)
 {
     int32_t fd;
     device_t* pnode;
@@ -360,7 +362,9 @@ dev_open(const char_t* pname, int32_t flags)
  ******************************************************************************
  */
 int32_t
-dev_read(int32_t fd, void* buf, int32_t count)
+dev_read(int32_t fd,
+        void* buf,
+        int32_t count)
 {
     int32_t size = -1;
     int32_t realfd = fd - 1;    /* 这里取得真实的fd */
@@ -395,7 +399,9 @@ dev_read(int32_t fd, void* buf, int32_t count)
  ******************************************************************************
  */
 int32_t
-dev_write(int32_t fd, const void* buf, int32_t count)
+dev_write(int32_t fd,
+        const void* buf,
+        int32_t count)
 {
     int32_t size = -1;
     int32_t realfd = fd - 1;    /* 这里取得真实的fd */
@@ -430,7 +436,9 @@ dev_write(int32_t fd, const void* buf, int32_t count)
  ******************************************************************************
  */
 int32_t
-dev_ioctl(int32_t fd, uint32_t cmd, void *args)
+dev_ioctl(int32_t fd,
+        uint32_t cmd,
+        void *args)
 {
     int32_t realfd = fd - 1;    /* 这里取得真实的fd */
 

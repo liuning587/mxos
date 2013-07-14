@@ -25,10 +25,12 @@ Section: Type Definitions
 /*-----------------------------------------------------------------------------
 Section: Constant Definitions
 -----------------------------------------------------------------------------*/
+/* NONE */
 
 /*-----------------------------------------------------------------------------
 Section: Global Variables
 -----------------------------------------------------------------------------*/
+/* NONE */
 
 /*-----------------------------------------------------------------------------
 Section: Local Variables
@@ -47,15 +49,20 @@ Section: Function Definitions
 #ifdef ASSERT_DEBUG
 /**
  ******************************************************************************
- * @brief      断言信息输出
- * @param[in]  None
- * @param[out] None
- * @retval     None
+ * @brief   断言信息输出
+ * @param[in]  *pfile
+ * @param[in]  line
+ * @param[in]  *pfun
+ * @param[in]  *pex
  *
+ * @return    None
  ******************************************************************************
  */
 void
-__assert_func(const char *pfile, int line, const char *pfun, const char *pex)
+__assert_func(const char *pfile,
+        int line,
+        const char *pfun,
+        const char *pex)
 {
 
     printf("(%s) assert failed at %s:%d file:%s\n", pex, pfun, line, pfile);
@@ -66,22 +73,23 @@ __assert_func(const char *pfile, int line, const char *pfun, const char *pex)
 
 /**
  ******************************************************************************
- * @brief
- * @param[in]  None
- * @param[out] None
+ * @brief   打印缓存
+ * @param[in]  *pformat : 提示字符
+ * @param[in]  *pbuffer : 缓存首地址
+ * @param[in]  len      : 长度
  *
- * @retval     None
+ * @return  None
  ******************************************************************************
  */
 extern void
-printbuffer(const char_t* format,
-            const uint8_t* buffer,
+printbuffer(const char_t *pformat,
+            const uint8_t *pbuffer,
             int32_t len)
 {
-    (void)printf(format);
+    (void)printf(pformat);
     for (int32_t i = 0; i < len; i++)
     {
-        (void)printf("%02X ", *(buffer + i));
+        (void)printf("%02X ", *(pbuffer + i));
     }
     (void)printf("\r\n");
 }

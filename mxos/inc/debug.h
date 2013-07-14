@@ -44,11 +44,15 @@ Section: Macro Definitions
 # define Dprintf(x...)
 #endif
 
+/* 若bool_expr为TRUE则不可编译 */
+#define C_ASSERT(bool_expr) extern char assert_dummy[(bool_expr) ? -1 : 1]
+
 /*-----------------------------------------------------------------------------
  Section: Function Prototypes
  ----------------------------------------------------------------------------*/
 extern void
 __assert_func(const char *, int, const char *, const char *);
+
 extern void
 printbuffer(const char_t* format,
             const uint8_t* buffer,

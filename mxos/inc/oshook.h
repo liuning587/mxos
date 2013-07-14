@@ -45,29 +45,31 @@ extern int32_t _the_console_fd;
  Section: Function Prototypes
  ----------------------------------------------------------------------------*/
 /*------------------- 下面是os移植在bsp中必须实现的方法 -----------------------*/
+/* 0. 关闭看门狗方法 */
+extern void WEAK bsp_close_watchdog(void);
 
 /* 1. uart底层输出字节，非中断模式 */
-extern void bsp_putchar(char_t c);
+extern void WEAK bsp_putchar(char_t c);
 
 /* 2. uart底层读取字节，查询模式，若无数据返回0 （使用tty时非必要）*/
-extern int32_t bsp_getchar(void);
+extern int32_t WEAK bsp_getchar(void);
 
 /* 3. bsp底层实现复位函数，可以复位cpu也可以掉电复位 */
-extern void bsp_reboot(void);
+extern void WEAK bsp_reboot(void);
 
 /* 4. bsp实现微秒定时器用于_usleep和任务统计功能 */
 
 /* 4.1 启动定时器 */
-extern void bsp_timer_start(void);
+extern void WEAK bsp_timer_start(void);
 
 /* 4.2 获取计数器值 */
-extern uint32_t bsp_timer_get(void);
+extern uint32_t WEAK bsp_timer_get(void);
 
 /* 5. 获取MCU主频 */
-extern uint32_t bsp_get_mcu_clk(void);
+extern uint32_t WEAK bsp_get_mcu_clk(void);
 
 /* 6. 获取MCU中断数量 */
-extern uint32_t bsp_get_max_int_count(void);
+extern uint32_t WEAK bsp_get_max_int_count(void);
 
 #endif /* __OSHOOK_H__ */
 /*-----------------------------End of oshook.h-------------------------------*/

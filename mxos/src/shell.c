@@ -15,6 +15,7 @@
 #include <dmnLib.h>
 #include <devLib.h>
 #include <oscfg.h>
+#include <logLib.h>
 
 /*-----------------------------------------------------------------------------
  Section: Constant Definitions
@@ -34,7 +35,7 @@
 #ifndef CFG_CBSIZE
 # define CFG_CBSIZE                (50u)    /**< ÃüÁîÐÐ×Ö½ÚÊý */
 #endif
-#define SHELL_PRINTF        printf          /**< ×Ö·û´®Êä³ö */
+#define SHELL_PRINTF        logmsg          /**< ×Ö·û´®Êä³ö */
 
 /*-----------------------------------------------------------------------------
  Section: Global Variables

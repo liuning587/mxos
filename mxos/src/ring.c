@@ -291,7 +291,9 @@ ring_dumb_read(struct ring_buf *ring, uint16_t len)
     { //不发生环绕
         ring->offset_read += result;
     }
+    intLock();
     ring->len -= result;
+    intUnlock();
     return result;
 }
 
@@ -331,7 +333,9 @@ ring_recede_read(struct ring_buf *ring, uint16_t len)
     { //不发生环绕
         ring->offset_read -= result;
     }
+    intLock();
     ring->len += result;
+    intUnlock();
 
     return result;
 }

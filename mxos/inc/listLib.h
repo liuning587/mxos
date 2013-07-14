@@ -28,11 +28,21 @@ struct ListNode
 /*-----------------------------------------------------------------------------
  Section: Function Prototypes
  ----------------------------------------------------------------------------*/
-extern void InitListHead(struct ListNode *pHead);
-extern void ListAddHead(struct ListNode *pNew, struct ListNode *pHead);
-extern void ListAddTail(struct ListNode *pNew, struct ListNode *pHead);
-extern void ListDelNode(struct ListNode *pNode);
-extern int ListIsEmpty(const struct ListNode *pHead);
+extern void
+InitListHead(struct ListNode *pHead);
+
+extern void
+ListAddHead(struct ListNode *pNew,
+        struct ListNode *pHead);
+extern void
+ListAddTail(struct ListNode *pNew,
+        struct ListNode *pHead);
+
+extern void
+ListDelNode(struct ListNode *pNode);
+
+extern int
+ListIsEmpty(const struct ListNode *pHead);
 
 #endif /* __LISTLIB_H__ */
 /*-----------------------------End of listLib.h------------------------------*/

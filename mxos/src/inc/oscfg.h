@@ -23,7 +23,8 @@ Section: Macro Definitions
 #define CORE_CM3    1
 #define CORE_CM4    2
 
-#define CORE_TYPE 2
+#define CORE_TYPE   CORE_CM4    /**< 核心配置 */
+#define SUPPORT_FPU 1           /**< 是否支持FPU */
 
 #define MCU_CLOCK      bsp_get_mcu_clk()        /**< 获取MCU的主频 */
 #define MAX_INT_COUNT  bsp_get_max_int_count()  /**< 获取MCU最大中断数量 */
@@ -46,6 +47,10 @@ Section: Macro Definitions
 #define MAX_BYTES_IN_A_MSG        (200u)    /**< 1个logMsg最大打印的字节数 */
 #define TASK_PRIORITY_LOGMSG        (1u)    /**< logMsg任务的优先 */
 #define TASK_STK_SIZE_LOGMSG     (1024u)    /**< logMsg任务的堆栈大小 */
+
+#if (CORE_TYPE == CORE_CM4) && (SUPPORT_FPU == 1)
+# define __FPU_PRESENT        1
+#endif
 
 #endif /* __OSCFG_H__ */
 /*------------------------------End of oscfg.h-------------------------------*/

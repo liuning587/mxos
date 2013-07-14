@@ -326,6 +326,7 @@ dmn_loop(void)
                 {
                     _func_cpuRestHook();    /* reset CPU */
                 }
+                bsp_reboot();
             }
 
         }
@@ -338,6 +339,7 @@ dmn_loop(void)
     {
         _func_cpuRestHook();    /* reset CPU */
     }
+    bsp_reboot();
 }
 
 /*--------------------------------dmnLib.c-----------------------------------*/

@@ -95,7 +95,8 @@ __list_add(struct ListNode *pNew,
  ******************************************************************************
  */
 void
-ListAddHead(struct ListNode *pNew, struct ListNode *pHead)
+ListAddHead(struct ListNode *pNew,
+        struct ListNode *pHead)
 {
     __list_add(pNew, pHead, pHead->pNextNode);
 }
@@ -113,7 +114,8 @@ ListAddHead(struct ListNode *pNew, struct ListNode *pHead)
  ******************************************************************************
  */
 void
-ListAddTail(struct ListNode *pNew, struct ListNode *pHead)
+ListAddTail(struct ListNode *pNew,
+        struct ListNode *pHead)
 {
     __list_add(pNew, pHead->pPrevNode, pHead);
 }
@@ -131,7 +133,8 @@ ListAddTail(struct ListNode *pNew, struct ListNode *pHead)
  ******************************************************************************
  */
 static inline void
-__list_del(struct ListNode *pPrev, struct ListNode *pNext)
+__list_del(struct ListNode *pPrev,
+        struct ListNode *pNext)
 {
     pNext->pPrevNode = pPrev;
     pPrev->pNextNode = pNext;
@@ -158,11 +161,8 @@ ListDelNode(struct ListNode *pNode)
  ******************************************************************************
  * @brief      ÅÐ¶ÏÁ´±íÊÇ·ñÎª¿Õ
  * @param[in]  *pHead   :
+ *
  * @retval     None
- *
- * @details
- *
- * @note
  ******************************************************************************
  */
 int

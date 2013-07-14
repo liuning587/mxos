@@ -113,7 +113,10 @@ devnull_close(struct device* dev)
  ******************************************************************************
  */
 static size_t
-devnull_read(struct device* dev, int32_t pos, void *buffer, size_t size)
+devnull_read(struct device* dev,
+        int32_t pos,
+        void *buffer,
+        size_t size)
 {
     return size;
 }
@@ -128,7 +131,10 @@ devnull_read(struct device* dev, int32_t pos, void *buffer, size_t size)
  ******************************************************************************
  */
 static size_t
-devnull_write(struct device* dev, int32_t pos, const void *buffer, size_t size)
+devnull_write(struct device* dev,
+        int32_t pos,
+        const void *buffer,
+        size_t size)
 {
     return size;
 }
@@ -144,7 +150,9 @@ devnull_write(struct device* dev, int32_t pos, const void *buffer, size_t size)
  ******************************************************************************
  */
 static int32_t
-devnull_ioctl(struct device* dev, uint32_t cmd, void *args)
+devnull_ioctl(struct device* dev,
+        uint32_t cmd,
+        void *args)
 {
     return 0;
 }

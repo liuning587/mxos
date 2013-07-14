@@ -68,17 +68,48 @@ typedef struct device
 /*-----------------------------------------------------------------------------
  Section: Function Prototypes
  ----------------------------------------------------------------------------*/
-extern status_t devlib_init(void);
-extern status_t dev_create(const char_t* pname, const fileopt_t* pfileopt, int32_t serial, void* pexparam);
-extern status_t dev_release(const char_t* pname);
-extern int32_t dev_open(const char_t* pname, int32_t flags);
-extern int32_t dev_read(int32_t fd, void* buf, int32_t count);
-extern int32_t dev_write(int32_t fd, const void* buf, int32_t count);
-extern int32_t dev_ioctl(int32_t fd, uint32_t cmd, void *args);
-extern int32_t dev_close(int32_t fd);
-extern device_t* devlib_get_info_by_name(const char_t *pname);
-extern device_t* devlib_get_info_by_serial(int32_t serial);
-extern void devlib_show_info(void);
+extern status_t
+devlib_init(void);
+
+extern status_t
+dev_create(const char_t* pname,
+        const fileopt_t* pfileopt,
+        int32_t serial,
+        void* pexparam);
+
+extern status_t
+dev_release(const char_t* pname);
+
+extern int32_t
+dev_open(const char_t* pname,
+        int32_t flags);
+
+extern int32_t
+dev_read(int32_t fd,
+        void* buf,
+        int32_t count);
+
+extern int32_t
+dev_write(int32_t fd,
+        const void* buf,
+        int32_t count);
+
+extern int32_t
+dev_ioctl(int32_t fd,
+        uint32_t cmd,
+        void *args);
+
+extern int32_t
+dev_close(int32_t fd);
+
+extern device_t*
+devlib_get_info_by_name(const char_t *pname);
+
+extern device_t*
+devlib_get_info_by_serial(int32_t serial);
+
+extern void
+devlib_show_info(void);
 
 #endif /* __DEVLIB_H__ */
 /*-----------------------------End of devLib.h-------------------------------*/

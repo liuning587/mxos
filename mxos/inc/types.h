@@ -53,5 +53,7 @@ typedef void    (*VOIDFUNCPTRBOOLE)(bool_e b);
 
 #define ARRAY_SIZE(a) (sizeof (a) / sizeof ((a)[0]))
 
+#define WEAK __attribute__ ((weak))
+
 #endif /* __TYPES_H__ */
 /*-----------------------------End of types.h--------------------------------*/

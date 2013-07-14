@@ -328,6 +328,13 @@ void vPortExitCritical( void )
 	}
 }
 /*-----------------------------------------------------------*/
+unsigned portBASE_TYPE getNesting( void )
+{
+    return uxCriticalNesting;
+}
+
+
+/*-----------------------------------------------------------*/
 
 __attribute__(( naked )) unsigned long ulPortSetInterruptMask( void )
 {

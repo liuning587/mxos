@@ -53,8 +53,7 @@ int32_t intCnt = 0;
 /*-----------------------------------------------------------------------------
  Section: Global Function Prototypes
  ----------------------------------------------------------------------------*/
-extern void vPortEnterCritical( void );
-extern void vPortExitCritical( void );
+/* NONE */
 
 /*-----------------------------------------------------------------------------
  Section: Function Definitions
@@ -143,7 +142,9 @@ intDisconnect(uint32_t irq_num)
         return ERROR;
     }
     if ((irq_num < 16) || (irq_num > MAX_INT_COUNT))
+    {
         return ERROR;
+    }
 
     intRtnTbl[irq_num - 16].routine = dummy;
     intRtnTbl[irq_num - 16].parameter = 0;
@@ -165,7 +166,9 @@ extern status_t
 intPrioSet(uint32_t irq_num, uint8_t prio)
 {
     if ((irq_num < 16) || (irq_num > MAX_INT_COUNT))
+    {
         return ERROR;
+    }
 
     NVIC->IP[irq_num] = ((prio << (8 - __NVIC_PRIO_BITS)) & 0xff);
 
@@ -188,7 +191,9 @@ extern status_t
 intEnable(uint32_t irq_num)
 {
     if ((irq_num < 16) || (irq_num > MAX_INT_COUNT))
+    {
         return ERROR;
+    }
 
     uint32_t nirq = irq_num - 16;
     NVIC->ISER[(nirq >> 5)] = (1 << (nirq & 0x1F)); /* enable interrupt */
@@ -198,21 +203,20 @@ intEnable(uint32_t irq_num)
 
 /**
  ******************************************************************************
- * @brief      除能指定的中断.
+ * @brief   使能指定的中断
  * @param[in]  irq_num   : 中断号(16 ~ MAX_INT_COUNT)
- * @retval
- *             status_t: 成功-OK, 失败-ERROR
  *
- * @details
- *
- * @note
+ * @retval  OK   : 成功
+ * @retval  ERROR: 失败
  ******************************************************************************
  */
 extern status_t
 intDisable(uint32_t irq_num)
 {
     if ((irq_num < 16) || (irq_num > MAX_INT_COUNT ))
+    {
         return ERROR;
+    }
 
     uint32_t nirq = irq_num - 16;
     NVIC->ICER[(nirq >> 5)] = (1 << (nirq & 0x1F)); /* disable interrupt */
@@ -220,17 +224,17 @@ intDisable(uint32_t irq_num)
     return OK;
 }
 
-/*******************************************************************************
-*
-* intContext - determine if the current state is in interrupt or task context
-*
-* This routine returns TRUE only if the current execution state is in
-* interrupt context and not in a meaningful task context.
-*
-* RETURNS: TRUE or FALSE.
-*/
-
-bool_e intContext (void)
+/**
+ ******************************************************************************
+ * @brief   是否为中断状态
+ * @param[in]  None
+ *
+ * @retval  TRUE : 是
+ * @retval  FALSE: 否
+ ******************************************************************************
+ */
+bool_e
+intContext (void)
 {
     return (intCnt > 0) ? TRUE : FALSE;
 }
@@ -238,10 +242,9 @@ bool_e intContext (void)
 /**
  ******************************************************************************
  * @brief      中断函数初始化.
+ * @param[in]  None
  *
- * @details
- *
- * @note
+ * @retval     None
  ******************************************************************************
  */
 extern status_t
@@ -275,28 +278,38 @@ intLibInit(void)
 
 /**
  ******************************************************************************
- * @brief      关中断.
+ * @brief      关中断
+ * @param[in]  None
  *
- * @details
- *
- * @note
+ * @retval     None
  ******************************************************************************
  */
-extern void intLock(void) {
-    vPortEnterCritical();
+void
+intLock(void)
+{
+    __asm(
+            "CPSID   I\n"
+            "CPSID   I\n"
+         );
+    intCnt++;
 }
 
 /**
  ******************************************************************************
  * @brief      开中断.
+ * @param[in]  None
  *
- * @details
- *
- * @note
+ * @retval     None
  ******************************************************************************
  */
-extern void intUnlock(void) {
-    vPortExitCritical();
+void
+intUnlock(void)
+{
+    intCnt--;
+    __asm(
+            "CPSIE   I\n"
+            "BX      LR\n"
+         );
 }
 /**
 * @}

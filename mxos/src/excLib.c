@@ -47,9 +47,8 @@ extern int32_t intCnt;
  ******************************************************************************
  * @brief      异常中断入口
  * @param[in]  None
- * @param[out] None
  *
- * @retval     None
+ * @return     None
  ******************************************************************************
  */
 void
@@ -85,14 +84,15 @@ excEnterCommon(void)
 /**
  ******************************************************************************
  * @brief    interrupt level handling of exceptions
- * @param[in]  pRegs    : 发生异常时寄存器值
- * @param[in]  excNo    : 异常中断号
+ * @param[in]  pregs    : 发生异常时寄存器值
+ * @param[in]  excno    : 异常中断号
  *
- * @retval None
+ * @return None
  ******************************************************************************
  */
 void
-excExcHandle(void* pRegs, uint32_t excNo)
+excExcHandle(void* pregs,
+        uint32_t excno)
 {
     uint32_t regs[16];
     uint32_t hfsr = *(uint32_t*)HARD_FALUT_FSR;
@@ -100,12 +100,12 @@ excExcHandle(void* pRegs, uint32_t excNo)
     uint8_t bfsr = *(uint8_t*)BUS_FALUT_FSR;
     uint16_t ufsr = *(uint16_t*)USGE_FALUT_FSR;
 
-    memcpy(regs, pRegs, 64);
-    uint32_t sp = (uint32_t)pRegs;
+    memcpy(regs, pregs, 64);
+    uint32_t sp = (uint32_t)pregs;
 
     intCnt++;
     printf("\r\n");
-    switch (excNo)
+    switch (excno)
     {
         case 3:
             /* 输出hfsr信息 */
@@ -145,7 +145,7 @@ excExcHandle(void* pRegs, uint32_t excNo)
             if (ufsr & 0x0200) printf("除数为零\r\n");
             break;
         default:
-            printf("=====无效的错误中断:%d=====\r\n", excNo);
+            printf("=====无效的错误中断:%d=====\r\n", excno);
             intCnt--;
             return;
     }
