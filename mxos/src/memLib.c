@@ -266,13 +266,17 @@ free(void *p)
         return;
     }
 
-    if (!IS_FREE((uint32_t)p))
+    if (ALIGN_UP((uint32_t)p) != (uint32_t)p)
     {
         logmsg("Warning: can not free block at[0x%08x].\n", p);
         return;
     }
 
     pheap = (heap_t *)((size_t)p - ALIGN_UP(MOFFSET(heap_t, node)));
+    if (IS_FREE(pheap->cursize))
+    {
+        return;
+    }
     if (pheap->magic != MAGIC_NUM)
     {
         logmsg("Warning: mem over write, can not free at[0x%08x].\n",
