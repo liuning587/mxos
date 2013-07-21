@@ -2845,47 +2845,50 @@ void vApplicationStackOverflowHook( xTaskHandle *pxTask, signed char *pcTaskName
 
 	        unsigned short usStackUsed = pxNextTCB->usStackSize - usStackRemaining*sizeof( portSTACK_TYPE );
 
-#if ( configGENERATE_RUN_TIME_STATS == 1 )
-            /* What percentage of the total run time has the task used?
-            This will always be rounded down to the nearest integer.
-            ulTotalRunTime has already been divided by 100. */
-	        unsigned long ulStatsAsPercentage = 0;
-	        if (ulTotalRunTime != 0)
+	        if (portGET_RUN_TIME_COUNTER_VALUE() != 0)
 	        {
-	            ulStatsAsPercentage = pxNextTCB->ulRunTimeCounter / ulTotalRunTime;
-	            ulStatsAsPercentage = ulStatsAsPercentage > 100 ? 100 :  ulStatsAsPercentage;
+                /* What percentage of the total run time has the task used?
+                This will always be rounded down to the nearest integer.
+                ulTotalRunTime has already been divided by 100. */
+                unsigned long ulStatsAsPercentage = 0;
+                if (ulTotalRunTime != 0)
+                {
+                    ulStatsAsPercentage = pxNextTCB->ulRunTimeCounter / ulTotalRunTime;
+                    ulStatsAsPercentage = ulStatsAsPercentage > 100 ? 100 :  ulStatsAsPercentage;
+                }
+                uint8_t strusage[5];
+                memset(strusage, 0, sizeof(strusage));
+                if (pxNextTCB->ulRunTimeCounter == 0)
+                {
+                    sprintf((char_t *)strusage, "0");
+                }
+                else if (ulStatsAsPercentage > 0L)
+                {
+                    sprintf((char_t *)strusage, "%3d", (uint32_t)ulStatsAsPercentage);
+                }
+                else
+                {
+                    sprintf((char_t *)strusage, "<1");
+                }
+                uint8_t str[20];
+                memset(str, 0, sizeof(str));
+                sprintf((char_t *)str, "%d/%d(%3d%%)", usStackUsed,pxNextTCB->usStackSize,usStackUsed*100/pxNextTCB->usStackSize);
+
+                logmsg("%-14s %2u %7s   %8X %15s %8X %10d %3s%%\r\n", pxNextTCB->pcTaskName,
+                (unsigned int)(configMAX_PRIORITIES-1 - pxNextTCB->uxPriority),cStatus,(unsigned int) pxNextTCB->pxTopOfStack,
+                str,(unsigned int) pxNextTCB, ( unsigned int ) pxNextTCB->ulRunTimeCounter, strusage);
+                pxNextTCB->ulRunTimeCounter = 0u;
 	        }
-            uint8_t strusage[5];
-            memset(strusage, 0, sizeof(strusage));
-            if (pxNextTCB->ulRunTimeCounter == 0)
-            {
-                sprintf((char_t *)strusage, "0");
-            }
-            else if (ulStatsAsPercentage > 0L)
-            {
-                sprintf((char_t *)strusage, "%3d", (uint32_t)ulStatsAsPercentage);
-            }
-            else
-            {
-                sprintf((char_t *)strusage, "<1");
-            }
-            uint8_t str[20];
-            memset(str, 0, sizeof(str));
-            sprintf((char_t *)str, "%d/%d(%3d%%)", usStackUsed,pxNextTCB->usStackSize,usStackUsed*100/pxNextTCB->usStackSize);
+	        else
+	        {
+                uint8_t str[20];
+                memset(str, 0, sizeof(str));
+                sprintf((char_t *)str, "%d/%d(%3d%%)", usStackUsed,pxNextTCB->usStackSize,usStackUsed*100/pxNextTCB->usStackSize);
 
-            logmsg("%-14s %2u %7s   %8X %15s %8X %10d %3s%%\r\n", pxNextTCB->pcTaskName,
-            (unsigned int)(configMAX_PRIORITIES-1 - pxNextTCB->uxPriority),cStatus,(unsigned int) pxNextTCB->pxTopOfStack,
-            str,(unsigned int) pxNextTCB, ( unsigned int ) pxNextTCB->ulRunTimeCounter, strusage);
-            pxNextTCB->ulRunTimeCounter = 0u;
-#else
-	        uint8_t str[20];
-	        memset(str, 0, sizeof(str));
-	        sprintf((char_t *)str, "%d/%d(%3d%%)", usStackUsed,pxNextTCB->usStackSize,usStackUsed*100/pxNextTCB->usStackSize);
-
-	        logmsg("%-14s %2u %7s   %8X %15s %8X\r\n", pxNextTCB->pcTaskName,
-	        (unsigned int)(configMAX_PRIORITIES-1 - pxNextTCB->uxPriority),cStatus,(unsigned int) pxNextTCB->pxTopOfStack,
-	        str,(unsigned int) pxNextTCB);
-#endif
+                logmsg("%-14s %2u %7s   %8X %15s %8X\r\n", pxNextTCB->pcTaskName,
+                (unsigned int)(configMAX_PRIORITIES-1 - pxNextTCB->uxPriority),cStatus,(unsigned int) pxNextTCB->pxTopOfStack,
+                str,(unsigned int) pxNextTCB);
+	        }
 
 	    } while( pxNextTCB != pxFirstTCB );
 	}
@@ -2908,13 +2911,16 @@ void vApplicationStackOverflowHook( xTaskHandle *pxTask, signed char *pcTaskName
 //	    vTaskSuspendAll();
 
 	    // Êä³öÁÐÃû
-#if ( configGENERATE_RUN_TIME_STATS == 1 )
-	   logmsg("\n     NAME      PRI  STATUS     SP     MAX USED/SIZE   TCBID    CPU TIME  ( %% )\n\r");
-	   logmsg("-------------- --- -------- -------- --------------- -------- ---------- -----\n\r");
-#else
-	   logmsg("     NAME      PRI  STATUS     SP     MAX USED/SIZE   TCBID\n\r");
-	   logmsg("-------------- --- -------- -------- --------------- --------\n\r");
-#endif
+	   if (portGET_RUN_TIME_COUNTER_VALUE() != 0)
+	   {
+	       logmsg("\n     NAME      PRI  STATUS     SP     MAX USED/SIZE   TCBID    CPU TIME  ( %% )\n\r");
+	       logmsg("-------------- --- -------- -------- --------------- -------- ---------- -----\n\r");
+	   }
+	   else
+	   {
+	       logmsg("     NAME      PRI  STATUS     SP     MAX USED/SIZE   TCBID\n\r");
+           logmsg("-------------- --- -------- -------- --------------- --------\n\r");
+	   }
 
 	    unsigned long ulTotalRunTime = 0u;
 #if ( configGENERATE_RUN_TIME_STATS == 1 )

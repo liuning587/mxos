@@ -3,71 +3,117 @@
  * @file      memLib.c
  * @brief     内存管理模块
  * @details   本文管理动态内存分配及释放(本文不能使用信号量)
- * @copyright
  *
+ * @copyright
  ******************************************************************************
  */
- 
+
 /*-----------------------------------------------------------------------------
-Section: Includes
------------------------------------------------------------------------------*/
+ Section: Includes
+ ----------------------------------------------------------------------------*/
 #include <listLib.h>
 #include <intLib.h>
 #include <debug.h>
 #include <memLib.h>
-#if 0
+#include <logLib.h>
+#include <maths.h>
+
 /*-----------------------------------------------------------------------------
-Section: Type Definitions
------------------------------------------------------------------------------*/
+ Section: Type Definitions
+ ----------------------------------------------------------------------------*/
+typedef struct _heap
+{
+    uint32_t magic;         /**< 魔数 */
+    uint32_t presize;       /**< 上一节点大小,最低位1表示used 0 free */
+    uint32_t cursize;       /**< 当前节点大小,最低位1表示used 0 free */
+    struct ListNode node;   /**< 通用链表节点 */
+} heap_t;
+
+/*-----------------------------------------------------------------------------
+ Section: Constant Definitions
+ ----------------------------------------------------------------------------*/
+#define MAGIC_NUM               (0xdeaddead)
 #define WORD_SIZE               sizeof(uint32_t)
-#define WORD_ALIGN_UP(addr)     (((addr) + WORD_SIZE - 1) & ~(WORD_SIZE - 1))
-#define WORD_ALIGN_DOWN(addr)   ((addr) & ~(WORD_SIZE - 1))
+#define ALIGN_UP(addr)          (((addr) + WORD_SIZE - 1) & ~(WORD_SIZE - 1))
+#define ALIGN_DOWN(addr)        ((addr) & ~(WORD_SIZE - 1))
 
-#define DWORD_SIZE              (WORD_SIZE << 1)
-
-#define LIST_NODE_SIZE          WORD_ALIGN_UP(sizeof(struct ListNode))
-#define LIST_NODE_ALIGN(nSize)  (((nSize) + LIST_NODE_SIZE - 1) & ~(LIST_NODE_SIZE - 1))
 #define MIN_HEAP_LEN            1024
+
 /* 判断空闲内存节点依据:最低位是否为1 */
-#define IS_FREE(nSize)          (((nSize) & (WORD_SIZE - 1)) == 0)
-#define GET_SIZE(pRegion)       ((pRegion)->nCurrSize & ~(WORD_SIZE - 1))
+#define IS_FREE(size)          (((size) & 0x01) == 0)
+#define GET_SIZE(size)         (size & ~(WORD_SIZE - 1))
 
-struct MemRegion
-{
-    size_t   nPrevSize;    /**< 上一个节点的大小 */
-    size_t   nCurrSize;    /**< 当前点的大小 */
-    struct ListNode lnMemRegion;    /**< 通用链表节点 */
-};
-/* 注意：考虑到下一个节点地址可以通过currsize计算得到，所以上面的结构体只有
-   上一个节点的大小 */
-
-static struct ListNode g_listFreeRegion;    /**< 指向内存链表 */
-static uint32_t totleMemSize = 0u;
-static bool_e is_heap_init = FALSE;
 /*-----------------------------------------------------------------------------
-Section: Function Definitions
------------------------------------------------------------------------------*/
-/* 获取下一个节点地址 */
-static inline struct MemRegion *GetSuccessor(struct MemRegion *pRegion)
+ Section: Global Variables
+ ----------------------------------------------------------------------------*/
+/* NONE */
+
+/*-----------------------------------------------------------------------------
+ Section: Local Variables
+ ----------------------------------------------------------------------------*/
+static struct ListNode the_heap_list = {NULL, NULL};    /**< 指向内存链表 */
+static uint32_t the_totle_size = 0u;
+
+/*-----------------------------------------------------------------------------
+ Section: Local Function Prototypes
+ ----------------------------------------------------------------------------*/
+/* NONE */
+
+/*-----------------------------------------------------------------------------
+ Section: Global Function Prototypes
+ ----------------------------------------------------------------------------*/
+/* NONE */
+
+/*-----------------------------------------------------------------------------
+ Section: Function Definitions
+ ----------------------------------------------------------------------------*/
+/**
+ ******************************************************************************
+ * @brief   获取相邻下一个节点地址
+ * @param[in]  *pheap   : 当前节点
+ *
+ * @retval  下一个节点地址
+ ******************************************************************************
+ */
+static inline heap_t *
+heap_next(const heap_t *pheap)
 {
-    return (struct MemRegion *)((uint8_t *)pRegion + DWORD_SIZE + GET_SIZE(pRegion));
+    return (heap_t *)((uint8_t *)pheap + ALIGN_UP(MOFFSET(heap_t, node))
+            + GET_SIZE(pheap->cursize));
 }
 
-/* 获取上一个节点地址 */
-static inline struct MemRegion *GetPredeccessor(struct MemRegion *pRegion)
+/**
+ ******************************************************************************
+ * @brief   获取相邻上一个节点地址
+ * @param[in]  *pheap   : 当前节点
+ *
+ * @retval  上一个节点地址
+ ******************************************************************************
+ */
+static inline heap_t *
+heap_pre(const heap_t *pheap)
 {
-    return (struct MemRegion *)((uint8_t *)pRegion - (pRegion->nPrevSize & ~(WORD_SIZE - 1)) - DWORD_SIZE);
+    return (heap_t *)((uint8_t *)pheap - ALIGN_UP(MOFFSET(heap_t, node))
+            - GET_SIZE(pheap->presize));
 }
 
-/* 重新设置pRegion节点的大小 */
-static inline void RegionSetSize(struct MemRegion *pRegion, size_t nSize)
+/**
+ ******************************************************************************
+ * @brief   重置节点大小
+ * @param[in]  *pheap   : 当前节点
+ * @param[in]  size     : 大小
+ *
+ * @return  None
+ ******************************************************************************
+ */
+static inline void
+region_set_size(heap_t *pheap, uint32_t size)
 {
-    struct MemRegion *pSuccRegion;
+    heap_t *pnext;
 
-    pRegion->nCurrSize = nSize;     /* 当前节点尺寸赋值 */
-
-    pSuccRegion = GetSuccessor(pRegion);    /* 获取下一节点 */
-    pSuccRegion->nPrevSize = nSize; /* 下一节点的上一节点赋值 */
+    pheap->cursize = size;
+    pnext = heap_next(pheap);
+    pnext->presize = size;
 }
 
 /**
@@ -83,166 +129,192 @@ static inline void RegionSetSize(struct MemRegion *pRegion, size_t nSize)
  ******************************************************************************
  */
 status_t
-memlib_init(uint32_t start, uint32_t end)
+memlib_add(uint32_t start, uint32_t end)
 {
-    struct MemRegion *pFirst, *pTail;
+    heap_t *pfirst = NULL;
+    heap_t *ptail = NULL;
 
-    start = WORD_ALIGN_UP(start);   /* malloc分配首地址，up字节对齐 */
-    end   = WORD_ALIGN_DOWN(end);   /* malloc分配末地址，down字节对齐 */
+    //todo: 防止重复调用
+    start = ALIGN_UP(start);   /* malloc分配首地址，up字节对齐 */
+    end   = ALIGN_DOWN(end);   /* malloc分配末地址，down字节对齐 */
 
     if (start + MIN_HEAP_LEN >= end)    /* 若可分配的堆空间小于最小堆尺寸，则返回 错误 */
     {
         return ERROR;
     }
 
-    /* 初始化时有头结点和尾节点，物理上为堆头和堆尾位置 */
-    pFirst = (struct MemRegion *)start;
-    pTail  = (struct MemRegion *)(end - DWORD_SIZE);    /* 不知道为何-DWORD_SIZE */
+    pfirst = (heap_t *)start;
+    ptail = (heap_t *)(end - ALIGN_UP(MOFFSET(heap_t, node)));
 
-    totleMemSize = (size_t)pTail - (size_t)pFirst;
-    pFirst->nPrevSize = 1;  /* 将上一个节点尺寸赋1表示上一节点为使用状态 */
-    /* 计算pFirst节点可分配内存 */
-    pFirst->nCurrSize = (size_t)pTail - (size_t)pFirst - DWORD_SIZE;
+    pfirst->magic = MAGIC_NUM;
+    pfirst->cursize = end - start - 2 * ALIGN_UP(MOFFSET(heap_t, node));
+    pfirst->presize = 0x01;
 
-    pTail->nPrevSize = pFirst->nCurrSize;   /* pTail上一结点为pTail */
-    pTail->nCurrSize = 1;   /* pTail下一结点为使用状态 */
+    ptail->magic = MAGIC_NUM;
+    ptail->presize = pfirst->cursize;
+    ptail->cursize = 0x01;
 
-    InitListHead(&g_listFreeRegion);    /* 初始化内存free链表 */
-
-    /* 将初始化的free节点添加到内存free链表中 */
-    ListAddTail(&pFirst->lnMemRegion, &g_listFreeRegion);
-    is_heap_init = TRUE;
+    if (the_heap_list.pNextNode == NULL)
+    {
+        InitListHead(&the_heap_list);
+    }
+    intLock();
+    ListAddTail(&pfirst->node, &the_heap_list);
+    intUnlock();
+    the_totle_size += end - start;
 
     return OK;
 }
 
-
 /**
  ******************************************************************************
- * @brief      malloc函数的实现
+ * @brief   malloc函数的实现
  * @param[in]  nSize    : 需要分配的大小
- * @retval     申请成功返回地址，失败返回NULL
+ *
+ * @retval  申请成功返回地址，失败返回NULL
  ******************************************************************************
  */
 void *
-malloc(size_t nSize)
+malloc(size_t size)
 {
     void *p = NULL;
-    struct ListNode *iter;
-    size_t nAllocSize, nRestSize;
-    struct MemRegion *pCurrRegion, *pSuccRegion;    // *pPrevRegion,
+    struct ListNode *piter;
 
-    if (is_heap_init != TRUE)
+    size_t alloc_size;
+    size_t rest_size;
+    heap_t *pheap;
+    heap_t *pnext;
+
+    if (the_heap_list.pNextNode == NULL)
     {
         return NULL;
     }
 
-    /* 计算实际需要的大小（4字节对齐）= 要申请的内存大小 + 节点信息大小 */
-    nAllocSize = LIST_NODE_ALIGN(nSize);
+    /* 计算实际需要的大小(4字节对齐)  */
+    alloc_size = ALIGN_UP(size);
 
     intLock();    /* 进入临界区 */
-    /* 遍历free内存链表 */
-    LIST_FOR_EACH(iter, &g_listFreeRegion)
+
+    LIST_FOR_EACH(piter, &the_heap_list)
     {
-        /* 取得遍历到的对象 */
-        pCurrRegion = MemToObj(iter, struct MemRegion, lnMemRegion);
-        // printf("%d <--> %d\n", pCurrRegion->nCurrSize, nAllocSize);
-        /* 该节点有足够空间分配nAllocSize,则进入do_alloc */
-        if (pCurrRegion->nCurrSize >= nAllocSize)
+        pheap = MemToObj(piter, heap_t, node);
+        if (pheap->magic != MAGIC_NUM)
+        {
+            logmsg("Warning: mem over write at[0x%08x].\n", &pheap->node);
+        }
+        if (GET_SIZE(pheap->cursize) >= alloc_size)
+        {
             goto do_alloc;
+        }
     }
-    /* 若没有空间分配了，则返回空指针 */
+
     intUnlock();  /* 退出临界区 */
 
     return NULL;
 
 do_alloc:
-    ListDelNode(iter);  /* 首先删除当前节点 */
+    ListDelNode(piter);  /* 首先删除当前节点 */
 
     /* 计算分配内存后剩余值 */
-    nRestSize = pCurrRegion->nCurrSize - nAllocSize;
+    rest_size = GET_SIZE(pheap->cursize) - alloc_size;
 
     /* 若分配后，剩余空间不足以再分配节点 */
-    if (nRestSize < sizeof(struct MemRegion))
+    if (rest_size <= ALIGN_UP(MOFFSET(heap_t, node)))
     {
-        /* 当分配剩余内存小于结点大小时，全部内存分配。标志当前节点内存使用位*/
-        RegionSetSize(pCurrRegion, pCurrRegion->nCurrSize | 1);
+        /* 当分配剩余内存小于结点大小时，全部内存分配*/
+        region_set_size(pheap, pheap->cursize | 0x01);
     }
     else
     {
         /* 在当前节点分配空间,并标志使用位 */
-        RegionSetSize(pCurrRegion, nAllocSize | 1);
+        region_set_size(pheap, alloc_size | 0x01);
 
         /* 获得下一节点地址 */
-        pSuccRegion = GetSuccessor(pCurrRegion);
+        pnext = heap_next(pheap);
+        pnext->magic = MAGIC_NUM;
+
         /* 重新计算下一节点可分配内存 */
-        RegionSetSize(pSuccRegion, nRestSize - DWORD_SIZE);
+        region_set_size(pnext, rest_size - ALIGN_UP(MOFFSET(heap_t, node)));
+
         /* 将空余节点增加到内存free空闲链表中 */
-        ListAddTail(&pSuccRegion->lnMemRegion, &g_listFreeRegion);
+        ListAddTail(&pnext->node, &the_heap_list);
     }
-
-    /* 获得内存地址 脱离链表,可直接写lnMemRegion*/
-    p = &pCurrRegion->lnMemRegion;
-
     intUnlock();  /* 退出临界区 */
+
+    /* 获得内存地址 脱离链表,注意node空间可以写*/
+    p = &pheap->node;
 
     return p;
 }
 
 /**
  ******************************************************************************
- * @brief      内存释放
+ * @brief   内存释放
  * @param[in]  None
- * @param[out] None
+ *
  * @retval     None
- *
- * @details
- *
- * @note
  ******************************************************************************
  */
 void
 free(void *p)
 {
-    struct MemRegion *pCurrRegion, *pSuccRegion;
+    heap_t *pheap;
+    heap_t *ptmp;
 
-    if (is_heap_init != TRUE)
+    if (the_heap_list.pNextNode == NULL)
     {
-        return ;
+        return;
     }
+
+    if (!IS_FREE((uint32_t)p))
+    {
+        logmsg("Warning: can not free block at[0x%08x].\n", p);
+        return;
+    }
+
+    pheap = (heap_t *)((size_t)p - ALIGN_UP(MOFFSET(heap_t, node)));
+    if (pheap->magic != MAGIC_NUM)
+    {
+        logmsg("Warning: mem over write, can not free at[0x%08x].\n",
+                &pheap->node);
+        return;
+    }
+
     intLock();    /* 进入临界区 */
 
-    pCurrRegion = (struct MemRegion *)((size_t)p - DWORD_SIZE);
-    pSuccRegion = GetSuccessor(pCurrRegion);
-
     /* 若下一个节点为free状态 */
-    if (IS_FREE(pSuccRegion->nCurrSize))
+    ptmp = heap_next(pheap);
+
+    if (ptmp->magic != MAGIC_NUM)
+    {
+        logmsg("Warning: mem over write at[0x%08x].\n", &pheap->node);
+    }
+
+    if (IS_FREE(ptmp->cursize))
     {
         /* 则合并当前节点和下一个节点，计算总空余空间 */
-        RegionSetSize(pCurrRegion, GET_SIZE(pCurrRegion) + pSuccRegion->nCurrSize + DWORD_SIZE);
+        region_set_size(pheap, GET_SIZE(pheap->cursize)
+                + ALIGN_UP(MOFFSET(heap_t, node)) + ptmp->cursize);
         /* 删除下一个节点 */
-        ListDelNode(&pSuccRegion->lnMemRegion);
+        ListDelNode(&ptmp->node);
     }
     else
     {
         /* 将低位置为0，表示空闲状态 */
-        RegionSetSize(pCurrRegion, GET_SIZE(pCurrRegion));
+        region_set_size(pheap, GET_SIZE(pheap->cursize));
     }
 
     /* 若上一个节点是空闲状态 */
-    if (IS_FREE(pCurrRegion->nPrevSize))
+    if (IS_FREE(pheap->presize))
     {
-        struct MemRegion *pPrevRegion;
-
-        /* 获取上一个节点地址 */
-        pPrevRegion = GetPredeccessor(pCurrRegion);
-        /* 合并本节的与上一个节点 */
-        RegionSetSize(pPrevRegion, pPrevRegion->nCurrSize + pCurrRegion->nCurrSize + DWORD_SIZE);
+        ptmp = heap_pre(pheap);
+        region_set_size(ptmp, pheap->cursize + pheap->presize
+                + ALIGN_UP(MOFFSET(heap_t, node)));
     }
     else
     {
         /* 将本节的添加到内存free链表中 */
-        ListAddTail(&pCurrRegion->lnMemRegion, &g_listFreeRegion);
+        ListAddTail(&pheap->node, &the_heap_list);
     }
 
     intUnlock();   /* 退出临界区 */
@@ -263,12 +335,13 @@ free(void *p)
 void
 showMenInfo(void)
 {
-    struct ListNode *iter;
-    struct MemRegion *pCurrRegion;
+    struct ListNode *piter;
+    heap_t *pheap;
     uint32_t TotalFreeSize = 0u;
     uint32_t MaxSize = 0u;
     uint32_t MinSize = 0xffffffff;
-    if (is_heap_init != TRUE)
+
+    if (the_heap_list.pNextNode == NULL)
     {
         printf(" Heap not initialized! Please call 'mem_init()'.\n");
         return ;
@@ -276,25 +349,32 @@ showMenInfo(void)
 
     intLock();    /* 进入临界区 */
     /* 遍历free内存链表 */
-    LIST_FOR_EACH(iter, &g_listFreeRegion)
+    LIST_FOR_EACH(piter, &the_heap_list)
     {
         /* 取得遍历到的对象 */
-        pCurrRegion = MemToObj(iter, struct MemRegion, lnMemRegion);
-        if (pCurrRegion->nCurrSize > MaxSize)
-            MaxSize = pCurrRegion->nCurrSize;
-        if (pCurrRegion->nCurrSize < MinSize)
-            MinSize = pCurrRegion->nCurrSize;
-        TotalFreeSize += pCurrRegion->nCurrSize;
+        pheap = MemToObj(piter, heap_t, node);
+        if (pheap->magic != MAGIC_NUM)
+        {
+            logmsg("Warning: mem over write at[0x%08x].\n", &pheap->node);
+        }
+        if (pheap->cursize > MaxSize)
+        {
+            MaxSize = pheap->cursize;
+        }
+        if (pheap->cursize < MinSize)
+        {
+            MinSize = pheap->cursize;
+        }
+        TotalFreeSize += pheap->cursize;
     }
     intUnlock();   /* 退出临界区 */
 
     printf("********** Heap Monitor ***********\n");
-    printf(" TotalHeapMem = %4d Kb  %4d Byte\n", totleMemSize / 1024, totleMemSize % 1024);
+    printf(" TotalHeapMem = %4d Kb  %4d Byte\n", the_totle_size / 1024, the_totle_size % 1024);
     printf(" TotalFreeMem = %4d Kb  %4d Byte\n", TotalFreeSize / 1024, TotalFreeSize % 1024);
     printf(" MaxFreeMem   = %4d Kb  %4d Byte\n", MaxSize / 1024, MaxSize % 1024);
     printf(" MinFreeMem   = %4d Kb  %4d Byte\n", MinSize / 1024, MinSize % 1024);
     //printf(" Fragindices  = %.2f\n", 1-(float)MaxSize / (float)TotalFreeSize);
     printf("***********************************\n");
 }
-#endif
-/*------------------------------- memLib.c ----------------------------------*/
+/*--------------------------------memLib.c-----------------------------------*/
