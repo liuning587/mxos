@@ -65,6 +65,11 @@ void
 _usleep(uint32_t us)
 {
     uint32_t time_out = us + bsp_timer_get();
+
+    if (time_out == us)
+    {
+        return;
+    }
     while (bsp_timer_get() < time_out)
     {
         ;   /* Ã¦µÈ */

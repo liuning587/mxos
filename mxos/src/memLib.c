@@ -15,7 +15,7 @@ Section: Includes
 #include <intLib.h>
 #include <debug.h>
 #include <memLib.h>
-
+#if 0
 /*-----------------------------------------------------------------------------
 Section: Type Definitions
 -----------------------------------------------------------------------------*/
@@ -72,15 +72,14 @@ static inline void RegionSetSize(struct MemRegion *pRegion, size_t nSize)
 
 /**
  ******************************************************************************
- * @brief      初始化堆
+ * @brief   初始化堆
  * @param[in]  start    : 堆起始地址
  * @param[in]  end      : 堆末地址
+ *
  * @retval     OK
  * @retval     ERROR
  *
  * @details  初始化后空余内存链表会有两个结点，头结点和尾节点
- *
- * @note
  ******************************************************************************
  */
 status_t
@@ -92,7 +91,9 @@ memlib_init(uint32_t start, uint32_t end)
     end   = WORD_ALIGN_DOWN(end);   /* malloc分配末地址，down字节对齐 */
 
     if (start + MIN_HEAP_LEN >= end)    /* 若可分配的堆空间小于最小堆尺寸，则返回 错误 */
+    {
         return ERROR;
+    }
 
     /* 初始化时有头结点和尾节点，物理上为堆头和堆尾位置 */
     pFirst = (struct MemRegion *)start;
@@ -135,11 +136,11 @@ malloc(size_t nSize)
     {
         return NULL;
     }
-    intLock();    /* 进入临界区 */
 
     /* 计算实际需要的大小（4字节对齐）= 要申请的内存大小 + 节点信息大小 */
     nAllocSize = LIST_NODE_ALIGN(nSize);
 
+    intLock();    /* 进入临界区 */
     /* 遍历free内存链表 */
     LIST_FOR_EACH(iter, &g_listFreeRegion)
     {
@@ -295,4 +296,5 @@ showMenInfo(void)
     //printf(" Fragindices  = %.2f\n", 1-(float)MaxSize / (float)TotalFreeSize);
     printf("***********************************\n");
 }
+#endif
 /*------------------------------- memLib.c ----------------------------------*/

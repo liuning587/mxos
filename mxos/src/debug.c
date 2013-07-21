@@ -66,7 +66,7 @@ __assert_func(const char *pfile,
 {
 
     printf("(%s) assert failed at %s:%d file:%s\n", pex, pfun, line, pfile);
-    intLock();
+//    intLock();
     while(1);
 }
 #endif

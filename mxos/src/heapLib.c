@@ -1,13 +1,13 @@
 /**
  ******************************************************************************
- * @file      heapLib.c
+ * @file      memLib.c
  * @brief     内存管理模块
  * @details   本文管理动态内存分配及释放(本文不能使用信号量)
  *
  * @copyright
  ******************************************************************************
  */
- 
+#if 1
 /*-----------------------------------------------------------------------------
  Section: Includes
  ----------------------------------------------------------------------------*/
@@ -15,6 +15,7 @@
 #include <intLib.h>
 #include <debug.h>
 #include <memLib.h>
+#include <logLib.h>
 #include <maths.h>
 
 /*-----------------------------------------------------------------------------
@@ -22,6 +23,7 @@
  ----------------------------------------------------------------------------*/
 typedef struct _heap
 {
+    uint32_t magic;         /**< 魔数 */
     uint32_t presize;       /**< 上一节点大小,最低位1表示used 0 free */
     uint32_t cursize;       /**< 当前节点大小,最低位1表示used 0 free */
     struct ListNode node;   /**< 通用链表节点 */
@@ -30,17 +32,16 @@ typedef struct _heap
 /*-----------------------------------------------------------------------------
  Section: Constant Definitions
  ----------------------------------------------------------------------------*/
+#define MAGIC_NUM               (0xdeaddead)
 #define WORD_SIZE               sizeof(uint32_t)
 #define ALIGN_UP(addr)          (((addr) + WORD_SIZE - 1) & ~(WORD_SIZE - 1))
 #define ALIGN_DOWN(addr)        ((addr) & ~(WORD_SIZE - 1))
 
-#define DWORD_SIZE              (WORD_SIZE << 1)
-
 #define MIN_HEAP_LEN            1024
 
 /* 判断空闲内存节点依据:最低位是否为1 */
-#define IS_FREE(nSize)          (((nSize) & (WORD_SIZE - 1)) == 0)
-#define GET_SIZE(size)          (size & ~(WORD_SIZE - 1))
+#define IS_FREE(size)          (((size) & 0x01) == 0)
+#define GET_SIZE(size)         (size & ~(WORD_SIZE - 1))
 
 /*-----------------------------------------------------------------------------
  Section: Global Variables
@@ -75,9 +76,9 @@ static uint32_t the_totle_size = 0u;
  ******************************************************************************
  */
 static inline heap_t *
-heap_next(heap_t *pheap)
+heap_next(const heap_t *pheap)
 {
-    return (heap_t *)((uint8_t *)pheap + ALIGN_UP(sizeof(heap_t))
+    return (heap_t *)((uint8_t *)pheap + ALIGN_UP(MOFFSET(heap_t, node))
             + GET_SIZE(pheap->cursize));
 }
 
@@ -90,9 +91,9 @@ heap_next(heap_t *pheap)
  ******************************************************************************
  */
 static inline heap_t *
-heap_pre(heap_t *pheap)
+heap_pre(const heap_t *pheap)
 {
-    return (heap_t *)((uint8_t *)pheap - ALIGN_UP(sizeof(heap_t))
+    return (heap_t *)((uint8_t *)pheap - ALIGN_UP(MOFFSET(heap_t, node))
             - GET_SIZE(pheap->presize));
 }
 
@@ -106,7 +107,7 @@ heap_pre(heap_t *pheap)
  ******************************************************************************
  */
 static inline void
-region_set_size(heap_t *pheap, size_t size)
+region_set_size(heap_t *pheap, uint32_t size)
 {
     heap_t *pnext;
 
@@ -128,7 +129,7 @@ region_set_size(heap_t *pheap, size_t size)
  ******************************************************************************
  */
 status_t
-heaplib_add(uint32_t start, uint32_t end)
+memlib_add(uint32_t start, uint32_t end)
 {
     heap_t *pfirst = NULL;
     heap_t *ptail = NULL;
@@ -143,11 +144,13 @@ heaplib_add(uint32_t start, uint32_t end)
     }
 
     pfirst = (heap_t *)start;
-    ptail = (heap_t *)(end - MOFFSET(heap_t, node));
+    ptail = (heap_t *)(end - ALIGN_UP(MOFFSET(heap_t, node)));
 
+    pfirst->magic = MAGIC_NUM;
     pfirst->cursize = end - start - 2 * ALIGN_UP(MOFFSET(heap_t, node));
     pfirst->presize = 0x01;
 
+    ptail->magic = MAGIC_NUM;
     ptail->presize = pfirst->cursize;
     ptail->cursize = 0x01;
 
@@ -195,7 +198,11 @@ malloc(size_t size)
     LIST_FOR_EACH(piter, &the_heap_list)
     {
         pheap = MemToObj(piter, heap_t, node);
-        if (pheap->cursize >= alloc_size)
+        if (pheap->magic != MAGIC_NUM)
+        {
+            logmsg("Warning: mem over write at[0x%08x].\n", &pheap->node);
+        }
+        if (GET_SIZE(pheap->cursize) >= alloc_size)
         {
             goto do_alloc;
         }
@@ -224,6 +231,7 @@ do_alloc:
 
         /* 获得下一节点地址 */
         pnext = heap_next(pheap);
+        pnext->magic = MAGIC_NUM;
 
         /* 重新计算下一节点可分配内存 */
         region_set_size(pnext, rest_size - ALIGN_UP(MOFFSET(heap_t, node)));
@@ -233,7 +241,7 @@ do_alloc:
     }
     intUnlock();  /* 退出临界区 */
 
-    /* 获得内存地址 脱离链表,可直接写lnMemRegion*/
+    /* 获得内存地址 脱离链表,注意node空间可以写*/
     p = &pheap->node;
 
     return p;
@@ -258,15 +266,30 @@ free(void *p)
         return;
     }
 
-    D_ASSERT((uint32_t)p & 0x03);
+    if (!IS_FREE((uint32_t)p))
+    {
+        logmsg("Warning: can not free block at[0x%08x].\n", p);
+        return;
+    }
 
     pheap = (heap_t *)((size_t)p - ALIGN_UP(MOFFSET(heap_t, node)));
-
+    if (pheap->magic != MAGIC_NUM)
+    {
+        logmsg("Warning: mem over write, can not free at[0x%08x].\n",
+                &pheap->node);
+        return;
+    }
 
     intLock();    /* 进入临界区 */
 
     /* 若下一个节点为free状态 */
     ptmp = heap_next(pheap);
+
+    if (ptmp->magic != MAGIC_NUM)
+    {
+        logmsg("Warning: mem over write at[0x%08x].\n", &pheap->node);
+    }
+
     if (IS_FREE(ptmp->cursize))
     {
         /* 则合并当前节点和下一个节点，计算总空余空间 */
@@ -350,4 +373,5 @@ showMenInfo(void)
     //printf(" Fragindices  = %.2f\n", 1-(float)MaxSize / (float)TotalFreeSize);
     printf("***********************************\n");
 }
-/*----------------------------heapLib.c--------------------------------*/
+/*--------------------------------memLib.c-----------------------------------*/
+#endif

@@ -143,6 +143,10 @@ is_taskname_used(TASK_ID taskid)
 DMN_ID
 dmn_register(void)
 {
+    if (the_dmn_id == NULL)
+    {
+        return NULL;
+    }
     TASK_ID taskid = taskIdSelf();
     if (TRUE == is_taskname_used(taskid))
     {
@@ -177,6 +181,11 @@ dmn_sign(DMN_ID id)
 {
     dmn_t *pdmn = (dmn_t *)id;
 
+    if (the_dmn_id == NULL)
+    {
+        return ERROR;
+    }
+
     semTake(the_dmn_sem, WAIT_FOREVER);
 
 #if 1
@@ -209,6 +218,11 @@ dmn_unregister(DMN_ID id)
 {
     dmn_t *pdmn = (dmn_t *)id;
 
+    if (the_dmn_id == NULL)
+    {
+        return ERROR;
+    }
+
     semTake(the_dmn_sem, WAIT_FOREVER);
     if (FALSE == is_taskname_used(id))
     {
@@ -237,6 +251,11 @@ dmn_info(bool_e is_sem)
     dmn_t *pdmn = NULL;
     struct ListNode *piter = NULL;
 
+    if (the_dmn_id == NULL)
+    {
+        printf("Task: DMN is not running!\n");
+        return ;
+    }
     printf("\n  Name\r\t\t\tRemainCounts\n");
 
     if (is_sem == TRUE)

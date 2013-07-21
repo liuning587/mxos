@@ -2812,7 +2812,7 @@ vTaskGetTaskName(xTaskHandle *pxTask)
  */
 void vApplicationStackOverflowHook( xTaskHandle *pxTask, signed char *pcTaskName )
 {
-    logmsg("\n\n vStackOverFlowInfoHandle: ERROR! TASK %08x STACK OVERFLOW!\n", pcTaskName);
+    logmsg("\n\n vStackOverFlowInfoHandle: ERROR! TASK %s STACK OVERFLOW!\n", pcTaskName);
     extern VOIDFUNCPTR _func_evtLogOverStackHook;
     if (_func_evtLogOverStackHook != NULL)
         _func_evtLogOverStackHook(pxTask,pcTaskName);

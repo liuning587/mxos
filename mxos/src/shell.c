@@ -509,8 +509,6 @@ shell_loop(void)
 {
     the_dmnid = dmn_register();
 
-    D_ASSERT(the_dmnid != NULL);
-
     while (1)
     {
         if (readline())
