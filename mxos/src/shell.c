@@ -242,11 +242,14 @@ readline(void)
 
         case 0x09: // TAB
             ret = match_cmd((char_t *)console_buffer, n_pos);
-            n = ret > 0 ? ret : n;
-            SHELL_PRINTF("\r");
-            SHELL_PRINTF(prompt);
-            SHELL_PRINTF("%s", console_buffer);
-            SHELL_PRINTF("\033[0K"); // Clear from cursor to end of line
+            if (ret > 0)
+            {
+                n = ret;
+                SHELL_PRINTF("\r");
+                SHELL_PRINTF(prompt);
+                SHELL_PRINTF("%s", console_buffer);
+                SHELL_PRINTF("\033[0K"); // Clear from cursor to end of line
+            }
             continue;
 
         case 0x7F: // DEL
