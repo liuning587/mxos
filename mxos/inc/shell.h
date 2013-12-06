@@ -24,6 +24,8 @@
 /*-----------------------------------------------------------------------------
  Section: Type Definitions
  ----------------------------------------------------------------------------*/
+#pragma pack(push, 1)
+
 /**
  * Monitor Command Table
  */
@@ -35,6 +37,9 @@ struct cmd_tbl_s
 	char_t      *usage;		/**< Usage message	(short)	    */
 };
 typedef struct cmd_tbl_s	cmd_tbl_t;
+typedef uint32_t (*SHELL_CMD_FUNCPTR) (cmd_tbl_t *, uint32_t, const uint8_t *[]);
+
+#pragma pack(pop)
 
 #define Struct_Section  __attribute__ ((unused,section (".shell_cmd")))
 
@@ -44,6 +49,7 @@ const cmd_tbl_t __shell_cmd_##name Struct_Section = {#name, maxargs, cmd, usage}
 #else
 #define SHELL_CMD(name,maxargs,cmd,usage) 
 #endif
+
 /*-----------------------------------------------------------------------------
  Section: Function Prototypes
  ----------------------------------------------------------------------------*/

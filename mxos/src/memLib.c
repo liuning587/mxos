@@ -11,6 +11,7 @@
 /*-----------------------------------------------------------------------------
  Section: Includes
  ----------------------------------------------------------------------------*/
+#include <stdio.h>
 #include <listLib.h>
 #include <intLib.h>
 #include <debug.h>
@@ -21,6 +22,8 @@
 /*-----------------------------------------------------------------------------
  Section: Type Definitions
  ----------------------------------------------------------------------------*/
+#pragma pack(push, 1)
+
 typedef struct _heap
 {
     uint32_t magic;         /**< 魔数 */
@@ -28,6 +31,8 @@ typedef struct _heap
     uint32_t cursize;       /**< 当前节点大小,最低位1表示used 0 free */
     struct ListNode node;   /**< 通用链表节点 */
 } heap_t;
+
+#pragma pack(pop)
 
 /*-----------------------------------------------------------------------------
  Section: Constant Definitions
@@ -109,11 +114,8 @@ heap_pre(const heap_t *pheap)
 static inline void
 region_set_size(heap_t *pheap, uint32_t size)
 {
-    heap_t *pnext;
-
     pheap->cursize = size;
-    pnext = heap_next(pheap);
-    pnext->presize = size;
+    heap_next(pheap)->presize = size;
 }
 
 /**
@@ -143,8 +145,8 @@ memlib_add(uint32_t start, uint32_t end)
         return ERROR;
     }
 
-    pfirst = (heap_t *)start;
-    ptail = (heap_t *)(end - ALIGN_UP(MOFFSET(heap_t, node)));
+    pfirst = (heap_t *)ALIGN_UP(start);
+    ptail = (heap_t *)ALIGN_DOWN(end - ALIGN_UP(MOFFSET(heap_t, node)));
 
     pfirst->magic = MAGIC_NUM;
     pfirst->cursize = end - start - 2 * ALIGN_UP(MOFFSET(heap_t, node));
@@ -200,9 +202,10 @@ malloc(size_t size)
         pheap = MemToObj(piter, heap_t, node);
         if (pheap->magic != MAGIC_NUM)
         {
-            logmsg("Warning: mem over write at[0x%08x].\n", &pheap->node);
+            printf("Warning: mem over write at[0x%08x].\n", &pheap->node);
         }
-        if (GET_SIZE(pheap->cursize) >= alloc_size)
+        if ((!(pheap->cursize & (WORD_SIZE - 1)))
+                && (GET_SIZE(pheap->cursize) >= alloc_size))
         {
             goto do_alloc;
         }
@@ -237,7 +240,7 @@ do_alloc:
         region_set_size(pnext, rest_size - ALIGN_UP(MOFFSET(heap_t, node)));
 
         /* 将空余节点增加到内存free空闲链表中 */
-        ListAddTail(&pnext->node, &the_heap_list);
+        ListAddHead(&pnext->node, &the_heap_list);
     }
     intUnlock();  /* 退出临界区 */
 
@@ -318,7 +321,7 @@ free(void *p)
     else
     {
         /* 将本节的添加到内存free链表中 */
-        ListAddTail(&pheap->node, &the_heap_list);
+        ListAddHead(&pheap->node, &the_heap_list);
     }
 
     intUnlock();   /* 退出临界区 */

@@ -51,6 +51,8 @@
 /*-----------------------------------------------------------------------------
  Section: Type Definitions
  ----------------------------------------------------------------------------*/
+#pragma pack(push, 1)
+
 /** log msg 结构体定义 */
 typedef struct
 {
@@ -58,6 +60,8 @@ typedef struct
     int32_t len;    /**< len of logmsg buf */
     uint8_t buf[MAX_BYTES_IN_A_MSG]; /**< format logmsg buf */
 } log_msg_t;
+
+#pragma pack(pop)
 
 /*-----------------------------------------------------------------------------
  Section: Globals Function

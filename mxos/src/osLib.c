@@ -104,7 +104,7 @@ status_t
 os_resource_init(void)
 {
     (void)devlib_init();
-    (void)devnull_create();
+//    (void)devnull_create();
 
     return OK;
 }

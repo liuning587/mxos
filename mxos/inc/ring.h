@@ -18,6 +18,8 @@ extern "C" {
 
 #define CN_LIMIT_UINT16     0xffff
 
+#pragma pack(push, 1)
+
 struct ring_buf
 {
     uint16_t    len;            /**< 缓冲区中的字节数 */
@@ -26,6 +28,8 @@ struct ring_buf
     uint16_t    max_len;        /**< 缓冲区最大长度,元素个数. */
     uint8_t     *buf;           /**< 缓冲区指针 */
 };
+
+#pragma pack(pop)
 
 extern void     ring_init(struct ring_buf *ring, uint8_t *buf, uint16_t len);
 extern uint16_t ring_capacity(struct ring_buf *ring);

@@ -40,6 +40,7 @@ Section: Macro Definitions
 #define MINOR(dev)  ((unsigned int) ((dev) & MINORMASK))
 #define MKDEV(ma,mi)    (((ma) << MINORBITS) | (mi))
 
+#pragma pack(push, 1)
 struct device;
 typedef struct fileopt
 {
@@ -64,6 +65,8 @@ typedef struct device
     int32_t usrs;                   /**< 设备打开次数 */
     void* param;                    /**< 设备扩展参数,例如ring buf */
 } device_t;
+
+#pragma pack(pop)
 
 /*-----------------------------------------------------------------------------
  Section: Function Prototypes

@@ -26,11 +26,15 @@
 /*-----------------------------------------------------------------------------
  Section: Type Definitions
  ----------------------------------------------------------------------------*/
+#pragma pack(push, 1)
+
 typedef struct int_rtn
 {
     VOIDFUNCPTR routine; /**< interrupt handler */
     int32_t parameter;   /**< parameter of the handler */
 } INT_RTN;
+
+#pragma pack(pop)
 
 /*-----------------------------------------------------------------------------
  Section: Constant Definitions
