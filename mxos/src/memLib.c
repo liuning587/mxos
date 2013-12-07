@@ -191,7 +191,7 @@ malloc(size_t size)
     {
         return NULL;
     }
-
+    size = (size < 8) ? 8 : size;   //fixme: 暂时这样做
     /* 计算实际需要的大小(4字节对齐)  */
     alloc_size = ALIGN_UP(size);
 
@@ -202,7 +202,7 @@ malloc(size_t size)
         pheap = MemToObj(piter, heap_t, node);
         if (pheap->magic != MAGIC_NUM)
         {
-            printf("Warning: mem over write at[0x%08x].\n", &pheap->node);
+            printf("Warning: mem over write at[0x%08x].\n", (int32_t)&pheap->node);
         }
         if ((!(pheap->cursize & (WORD_SIZE - 1)))
                 && (GET_SIZE(pheap->cursize) >= alloc_size))
@@ -294,7 +294,7 @@ free(void *p)
 
     if (ptmp->magic != MAGIC_NUM)
     {
-        logmsg("Warning: mem over write at[0x%08x].\n", &pheap->node);
+        logmsg("Warning: mem over write at[0x%08x].\n", &ptmp->node);
     }
 
     if (IS_FREE(ptmp->cursize))
