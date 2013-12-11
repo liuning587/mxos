@@ -74,7 +74,7 @@ int32_t intCnt = 0;
  */
 void
 intHandler(uint32_t irq_num)
-{
+{return;
     intCnt++;
     INT_RTN int_rtn = intRtnTbl[irq_num - 16];
 
@@ -312,7 +312,6 @@ intUnlock(void)
     intCnt--;
     __asm(
             "CPSIE   I\n"
-            "BX      LR\n"
          );
 }
 /**

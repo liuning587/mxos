@@ -84,7 +84,7 @@ void
 os_print_banner(void)
 {
     printf("\n  OS Version: "OS_RELEASE
-           "\n  FreeRTOS  : V7.3.0"
+           "\n  FreeRTOS  : V7.6.0"
            "\n  Build Time: "__DATE__" "__TIME__
            "\n  CopyRight : Xxxx Xxxx..\n");
 }
