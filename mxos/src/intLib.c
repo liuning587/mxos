@@ -312,7 +312,6 @@ intUnlock(void)
     intCnt--;
     __asm(
             "CPSIE   I\n"
-            "BX      LR\n"
          );
 }
 /**
