@@ -137,8 +137,6 @@ typedef struct tskTaskControlBlock
 		portSTACK_TYPE *pxEndOfStack;			/*< Points to the end of the stack on architectures where the stack grows up from low memory. */
 	#endif
 
-    unsigned short usStackSize;
-
 	#if ( portCRITICAL_NESTING_IN_TCB == 1 )
 		unsigned portBASE_TYPE uxCriticalNesting; /*< Holds the critical section nesting depth for ports that do not maintain their own count in the port layer. */
 	#endif
@@ -170,6 +168,7 @@ typedef struct tskTaskControlBlock
 		implements a system-wide malloc() that must be provided with locks. */
 		struct _reent xNewLib_reent;
 	#endif
+	    unsigned short usStackSize;
 
 } tskTCB;
 
@@ -2849,7 +2848,7 @@ vTaskGetTaskName(xTaskHandle *pxTask)
  */
 void vApplicationStackOverflowHook( xTaskHandle xTask, signed char *pcTaskName )
 {
-    logmsg("\n\n vStackOverFlowInfoHandle: ERROR! TASK %s STACK OVERFLOW!\n", pcTaskName);
+    printf("\n\n vStackOverFlowInfoHandle: ERROR! TASK %s STACK OVERFLOW!\n", pcTaskName);
     extern VOIDFUNCPTR _func_evtLogOverStackHook;
     if (_func_evtLogOverStackHook != NULL)
         _func_evtLogOverStackHook(xTask,pcTaskName);
@@ -2911,7 +2910,7 @@ void vApplicationStackOverflowHook( xTaskHandle xTask, signed char *pcTaskName )
                 memset(str, 0, sizeof(str));
                 sprintf((char_t *)str, "%d/%d(%3d%%)", usStackUsed,pxNextTCB->usStackSize,usStackUsed*100/pxNextTCB->usStackSize);
 
-                logmsg("%-14s %2u %7s   %8X %15s %8X %10d %3s%%\r\n", pxNextTCB->pcTaskName,
+                printf("%-14s %2u %7s   %8X %15s %8X %10d %3s%%\r\n", pxNextTCB->pcTaskName,
                 (unsigned int)(configMAX_PRIORITIES-1 - pxNextTCB->uxPriority),cStatus,(unsigned int) pxNextTCB->pxTopOfStack,
                 str,(unsigned int) pxNextTCB, ( unsigned int ) pxNextTCB->ulRunTimeCounter, strusage);
                 pxNextTCB->ulRunTimeCounter = 0u;
@@ -2922,7 +2921,7 @@ void vApplicationStackOverflowHook( xTaskHandle xTask, signed char *pcTaskName )
                 memset(str, 0, sizeof(str));
                 sprintf((char_t *)str, "%d/%d(%3d%%)", usStackUsed,pxNextTCB->usStackSize,usStackUsed*100/pxNextTCB->usStackSize);
 
-                logmsg("%-14s %2u %7s   %8X %15s %8X\r\n", pxNextTCB->pcTaskName,
+                printf("%-14s %2u %7s   %8X %15s %8X\r\n", pxNextTCB->pcTaskName,
                 (unsigned int)(configMAX_PRIORITIES-1 - pxNextTCB->uxPriority),cStatus,(unsigned int) pxNextTCB->pxTopOfStack,
                 str,(unsigned int) pxNextTCB);
 	        }
@@ -2950,13 +2949,13 @@ void vApplicationStackOverflowHook( xTaskHandle xTask, signed char *pcTaskName )
 	    // Êä³öÁÐÃû
 	   if (portGET_RUN_TIME_COUNTER_VALUE() != 0)
 	   {
-	       logmsg("\n     NAME      PRI  STATUS     SP     MAX USED/SIZE   TCBID    CPU TIME  ( %% )\n\r");
-	       logmsg("-------------- --- -------- -------- --------------- -------- ---------- -----\n\r");
+	       printf("\n     NAME      PRI  STATUS     SP     MAX USED/SIZE   TCBID    CPU TIME  ( %% )\n\r");
+	       printf("-------------- --- -------- -------- --------------- -------- ---------- -----\n\r");
 	   }
 	   else
 	   {
-	       logmsg("     NAME      PRI  STATUS     SP     MAX USED/SIZE   TCBID\n\r");
-           logmsg("-------------- --- -------- -------- --------------- --------\n\r");
+	       printf("     NAME      PRI  STATUS     SP     MAX USED/SIZE   TCBID\n\r");
+	       printf("-------------- --- -------- -------- --------------- --------\n\r");
 	   }
 
 	    unsigned long ulTotalRunTime = 0u;
