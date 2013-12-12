@@ -23,9 +23,7 @@ int putchar(int c)
 {
     extern int32_t _the_console_fd;
     extern long xTaskGetSchedulerState( void );
-    extern unsigned long getNesting( void );
-    if ((intContext() == TRUE) || (_the_console_fd <= 0)
-            || (getNesting() > 0)) //|| (xTaskGetSchedulerState() != 1))
+    if ((intContext() == TRUE) || (_the_console_fd <= 0)) //|| (xTaskGetSchedulerState() != 1))
     {
         /* 在终端中或调度器未运行时直接调用底层输出保证不使用taskDelay */
         if (c == '\n')

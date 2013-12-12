@@ -12,6 +12,7 @@
 /*-----------------------------------------------------------------------------
  Section: Includes
  ----------------------------------------------------------------------------*/
+#include <intLib.h>
 #include <taskLib.h>
 #include <FreeRTOS.h>
 #include <task.h>
@@ -321,18 +322,20 @@ semDelete(SEM_ID semId)
 extern status_t
 semTake(SEM_ID semId, uint32_t timeout)
 {
-    int32_t pdRtn;
-	if (timeout != 0)
+    signed portBASE_TYPE  pdRtn = pdFALSE;
+
+    timeout = (timeout == 0u) ? portMAX_DELAY : timeout;
+
+    if (intContext() == TRUE)
     {
-    	pdRtn = xSemaphoreTake(semId, timeout);
+        pdRtn = xSemaphoreTakeFromISR(semId, NULL);   //fixme: Œ¥≤‚ ‘
     }
-	else
-	{
-    	pdRtn = xSemaphoreTake(semId, portMAX_DELAY);
-	}
+    else
+    {
+        pdRtn = xSemaphoreTake(semId, timeout);
+    }
 
 	return (pdRtn == pdTRUE) ? OK : ERROR;
-
 }
 
 /**
@@ -349,14 +352,18 @@ semTake(SEM_ID semId, uint32_t timeout)
 extern status_t
 semGive(SEM_ID semId)
 {
-    if (xSemaphoreGive(semId) == pdTRUE)
+    signed portBASE_TYPE  pdRtn = pdFALSE;
+
+    if (intContext() == TRUE)
     {
-        return OK;
+        pdRtn = xSemaphoreGiveFromISR(semId, NULL);   //fixme: Œ¥≤‚ ‘
     }
     else
     {
-        return ERROR;
+        pdRtn = xSemaphoreGive(semId);
     }
+
+    return (pdRtn == pdTRUE) ? OK : ERROR;
 }
 
 /*
@@ -398,14 +405,19 @@ msgQCreate(uint32_t msgQLen)
 extern status_t
 msgQSend(MSG_Q_ID msgQId, void *pmsg)
 {
-    if (xQueueSend( msgQId, &pmsg, 0 ) == pdPASS)
+    signed portBASE_TYPE  pdRtn = pdFALSE;
+
+    if (intContext() == TRUE)
     {
-        return OK;
+        pdRtn = xQueueSendFromISR(msgQId, &pmsg, NULL);   //fixme: Œ¥≤‚ ‘
+
     }
     else
     {
-        return ERROR;
+        pdRtn = xQueueSend(msgQId, &pmsg, 0);
     }
+
+    return (pdRtn == pdTRUE) ? OK : ERROR;
 }
 
 /**
@@ -424,23 +436,25 @@ msgQSend(MSG_Q_ID msgQId, void *pmsg)
 extern status_t
 msgQReceive(MSG_Q_ID msgQId, uint32_t timeout, void **pmsg)
 {
+    signed portBASE_TYPE  pdRtn = pdFALSE;
     void * dummyptr;
-    int32_t pdRtn;
+
     if (pmsg == NULL)
     {
         pmsg = &dummyptr;
     }
 
-    if (timeout != 0 )
+    timeout = (timeout == 0u) ? portMAX_DELAY : timeout;
+    if (intContext() == TRUE)
     {
-    	pdRtn = xQueueReceive( msgQId, &(*pmsg), timeout );
+//        pdRtn = xQueueCRReceiveFromISR()( msgQId, &(*pmsg), timeout );//fixme: Œ¥≤‚ ‘
     }
     else
     {
-    	pdRtn = xQueueReceive( msgQId, &(*pmsg), portMAX_DELAY );
+        pdRtn = xQueueReceive( msgQId, &(*pmsg), timeout );
     }
 
-	return (pdRtn == pdTRUE) ? OK : ERROR;
+    return (pdRtn == pdTRUE) ? OK : ERROR;
 }
 
 /**

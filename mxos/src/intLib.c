@@ -241,7 +241,12 @@ intDisable(uint32_t irq_num)
 bool_e
 intContext (void)
 {
-    return (intCnt > 0) ? TRUE : FALSE;
+    extern unsigned long getNesting( void );
+    if ((intCnt > 0) || (0 < getNesting()))
+    {
+        return TRUE;
+    }
+    return FALSE;
 }
 
 /**
