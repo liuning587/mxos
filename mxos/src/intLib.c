@@ -17,6 +17,7 @@
 #include <types.h>
 #include <stdlib.h>
 #include <oscfg.h>
+#include <oshook.h>
 #if CORE_TYPE == CORE_CM3
 #include <core_cm3.h>
 #elif  CORE_TYPE == CORE_CM4
