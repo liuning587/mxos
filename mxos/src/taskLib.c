@@ -12,7 +12,7 @@
 /*-----------------------------------------------------------------------------
  Section: Includes
  ----------------------------------------------------------------------------*/
-#include <intLib.h>
+//#include <intLib.h>
 #include <taskLib.h>
 #include <FreeRTOS.h>
 #include <task.h>
@@ -326,11 +326,11 @@ semTake(SEM_ID semId, uint32_t timeout)
 
     timeout = (timeout == 0u) ? portMAX_DELAY : timeout;
 
-    if (intContext() == TRUE)
-    {
-        pdRtn = xSemaphoreTakeFromISR(semId, NULL);   //fixme: Œ¥≤‚ ‘
-    }
-    else
+//    if (intContext() == TRUE)
+//    {
+//        pdRtn = xSemaphoreTakeFromISR(semId, NULL);   //fixme: Œ¥≤‚ ‘
+//    }
+//    else
     {
         pdRtn = xSemaphoreTake(semId, timeout);
     }
@@ -354,11 +354,11 @@ semGive(SEM_ID semId)
 {
     signed portBASE_TYPE  pdRtn = pdFALSE;
 
-    if (intContext() == TRUE)
-    {
-        pdRtn = xSemaphoreGiveFromISR(semId, NULL);   //fixme: Œ¥≤‚ ‘
-    }
-    else
+//    if (intContext() == TRUE)
+//    {
+//        pdRtn = xSemaphoreGiveFromISR(semId, NULL);   //fixme: Œ¥≤‚ ‘
+//    }
+//    else
     {
         pdRtn = xSemaphoreGive(semId);
     }
@@ -407,12 +407,12 @@ msgQSend(MSG_Q_ID msgQId, void *pmsg)
 {
     signed portBASE_TYPE  pdRtn = pdFALSE;
 
-    if (intContext() == TRUE)
-    {
-        pdRtn = xQueueSendFromISR(msgQId, &pmsg, NULL);   //fixme: Œ¥≤‚ ‘
-
-    }
-    else
+//    if (intContext() == TRUE)
+//    {
+//        pdRtn = xQueueSendFromISR(msgQId, &pmsg, NULL);   //fixme: Œ¥≤‚ ‘
+//
+//    }
+//    else
     {
         pdRtn = xQueueSend(msgQId, &pmsg, 0);
     }
@@ -445,11 +445,11 @@ msgQReceive(MSG_Q_ID msgQId, uint32_t timeout, void **pmsg)
     }
 
     timeout = (timeout == 0u) ? portMAX_DELAY : timeout;
-    if (intContext() == TRUE)
-    {
-//        pdRtn = xQueueCRReceiveFromISR()( msgQId, &(*pmsg), timeout );//fixme: Œ¥≤‚ ‘
-    }
-    else
+//    if (intContext() == TRUE)
+//    {
+////        pdRtn = xQueueCRReceiveFromISR()( msgQId, &(*pmsg), timeout );//fixme: Œ¥≤‚ ‘
+//    }
+//    else
     {
         pdRtn = xQueueReceive( msgQId, &(*pmsg), timeout );
     }

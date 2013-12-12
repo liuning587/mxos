@@ -29,7 +29,7 @@ Section: Macro Definitions
 #define MCU_CLOCK      bsp_get_mcu_clk()        /**< 获取MCU的主频 */
 #define MAX_INT_COUNT  bsp_get_max_int_count()  /**< 获取MCU最大中断数量 */
 
-#define TICKS_PER_SECOND          (1000u)    /**< 定义时钟周期终端的频率 */
+#define TICKS_PER_SECOND          (100u)    /**< 定义时钟周期终端的频率 */
 #define MAX_TASK_PRIORITIES         (8u)    /**< 定义操作系统任务的最高优先级 */
 
 /* shell任务配置 */
