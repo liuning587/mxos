@@ -18,7 +18,7 @@ Section: Includes
 /*-----------------------------------------------------------------------------
 Section: Macro Definitions
 -----------------------------------------------------------------------------*/
-#define OS_RELEASE  "0.1.1-beta1"
+#define OS_RELEASE  "0.1.2-beta1"
 
 #define CORE_CM3    1
 #define CORE_CM4    2
