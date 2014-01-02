@@ -142,6 +142,7 @@ sscanf(const char *str, const char *format, ...)
     int ret;
     int *p_int;
     va_list ap;
+    char fmt;
 
     ret = 0;
 
@@ -173,7 +174,17 @@ sscanf(const char *str, const char *format, ...)
             }
             width = (width == 0) ? -1 : width;
 
-            switch (*format)
+            if ((*str == '0') && ((*(str + 1) == 'x') || (*(str + 1) == 'X')))
+            {
+                str += 2;
+                fmt = 'x';
+            }
+            else
+            {
+                fmt = *format;
+            }
+
+            switch (fmt)
             {
             case 'd':
             case 'i':   /* 10½øÖÆ */
@@ -190,10 +201,6 @@ sscanf(const char *str, const char *format, ...)
                 p_int = va_arg( ap, int *);
                 str = scan_string(str, 16);
                 if (*str == 0x0) goto end_parse;
-                if ((*str == '0') && ((*(str + 1) == 'x') || (*(str + 1) == 'X')))
-                {
-                    str += 2;
-                }
                 *p_int = (int)strntol(str, &str, width, 16);
                 ret ++;
                 break;
